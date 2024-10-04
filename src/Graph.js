@@ -12,36 +12,39 @@ const Graph = ({ elements, events }) => {
                 {
                     selector: 'node',
                     style: {
-                        'background-color': '#666',
-                        'label': 'data(name)'
+                        'background-color': 'rgba(24,154,248,0)',
+                        'label': 'data(name)',
+                        'font-size': '7px',
+                        'width': '15px',
+                        'height': '15px'
                     }
                 },
                 {
                     selector: 'edge',
                     style: {
-                        'width': 3,
+                        'width': 2,
                         'line-color': '#ccc',
-                        'target-arrow-color': '#ccc',
-                        'target-arrow-shape': 'triangle'
+                        'target-arrow-color': 'rgba(204,204,204,0)',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'edge-distances': 'node-position',
+                        'label': 'data(label)',
+                        'text-rotation': 'autorotate',
+                        'font-size': '3px',
                     }
                 }
             ],
             layout: {
-                name: 'grid',
+                name: 'cose',
                 fit: true,
                 avoidOverlap: true,
-                animate: true
+                animate: true,
+                minNodeSpacing: 400,
             }
         });
 
         cyRef.current.on('tap', 'node', (event) => {
-            // send an alert message with the node's name and details
             alert(`Node: ${event.target.data('name')}, \nage: ${event.target.data('age')}, \nlocation: ${event.target.data('location')}, \ninterests: ${event.target.data('interests')}`);
-        });
-
-        cyRef.current.on('tap', 'edge', (event) => {
-            // send an alert message with all the edge data
-            alert(`Source: ${event.target.source().data('name')}, \nTarget: ${event.target.target().data('name')}, \nRelationship: ${event.target.data('label')}`);
         });
 
         return () => {
@@ -49,7 +52,7 @@ const Graph = ({ elements, events }) => {
         };
     }, [elements, events]);
 
-    return <div id="cy" style={{ width: '600px', height: '600px' }} />;
+    return <div id="cy" style={{ width: `100%`, height: '600px' }} />;
 };
 
 export default Graph;

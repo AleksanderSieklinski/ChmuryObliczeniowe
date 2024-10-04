@@ -4,9 +4,3 @@ body {
     margin: 15px;
     padding: 0;
 }
-
-.app-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
