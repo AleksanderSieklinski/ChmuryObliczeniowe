@@ -30,7 +30,7 @@ const App = () => {
     }, []);
     useEffect(() => {
         if (selectedUser1 && selectedUser2) {
-            axios.get(`http://localhost:3000/relationship/${selectedUser1}/${selectedUser2}`)
+            axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/relationship/${selectedUser1}/${selectedUser2}`)
                 .then(response => {
                     if (response.data.relationship) {
                         setRelationshipType(response.data.relationship);
@@ -56,17 +56,17 @@ const App = () => {
         setElements([...nodes, ...edges]);
     }, [users, relationships]);
     const fetchUsers = () => {
-        axios.get('http://localhost:3000/users')
+        axios.get('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/users')
             .then(response => setUsers(response.data))
             .catch(error => console.error(error));
     };
     const fetchRelationships = () => {
-        axios.get('http://localhost:3000/relationships')
+        axios.get('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/relationships')
             .then(response => setRelationships(response.data))
             .catch(error => console.error(error));
     };
     const findMutualInterests = () => {
-        axios.get(`http://localhost:3000/mutual-interests/${selectedUser1}/${selectedUser2}`)
+        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/mutual-interests/${selectedUser1}/${selectedUser2}`)
             .then(response => {
                 setMutualInterests(response.data);
                 setShowMutualInterests(true);
@@ -74,7 +74,7 @@ const App = () => {
             .catch(error => console.error(error));
     };
     // const sendMessage = () => {
-    //     axios.post('http://localhost:3000/send-message', {
+    //     axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/send-message', {
     //         sender: selectedUser1,
     //         receiver: selectedUser2,
     //         message: messageText
@@ -86,17 +86,17 @@ const App = () => {
     //         .catch(error => console.error(error));
     // };
     // const fetchMessages = () => {
-    //     axios.get(`http://localhost:3000/messages/${selectedUser1}/${selectedUser2}`)
+    //     axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/messages/${selectedUser1}/${selectedUser2}`)
     //         .then(response => setMessages(response.data))
     //         .catch(error => console.error(error));
     // };
     const searchUsers = () => {
-        axios.get(`http://localhost:3000/search-users?query=${searchQuery}`)
+        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/search-users?query=${searchQuery}`)
             .then(response => setSearchResults(response.data))
             .catch(error => console.error(error));
     };
     const addUser = () => {
-        axios.post('http://localhost:3000/add-user', {
+        axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/add-user', {
             name: newUserName,
             age: newUserAge,
             location: newUserLocation,
@@ -112,7 +112,7 @@ const App = () => {
             .catch(error => console.error(error));
     };
     const deleteUser = (name) => {
-        axios.delete(`http://localhost:3000/delete-user/${name}`)
+        axios.delete(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/delete-user/${name}`)
             .then(response => {
                 setUsers(users.filter(user => user.name !== name));
                 console.log(response.data);
@@ -120,14 +120,14 @@ const App = () => {
             .catch(error => console.error(error));
     };
     const addRelationship = () => {
-        axios.get(`http://localhost:3000/relationship/${selectedUser1}/${selectedUser2}`)
+        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/relationship/${selectedUser1}/${selectedUser2}`)
             .then(response => {
                 if (response.data.relationship) {
-                    axios.delete('http://localhost:3000/delete-relationship', {
+                    axios.delete('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/delete-relationship', {
                         data: { user1: selectedUser1, user2: selectedUser2, relationshipType, bidirectional }
                     })
                         .then(() => {
-                            axios.post('http://localhost:3000/add-relationship', {
+                            axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/add-relationship', {
                                 user1: selectedUser1,
                                 user2: selectedUser2,
                                 relationshipType,
@@ -143,7 +143,7 @@ const App = () => {
                         })
                         .catch(error => console.error(error));
                 } else {
-                    axios.post('http://localhost:3000/add-relationship', {
+                    axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/add-relationship', {
                         user1: selectedUser1,
                         user2: selectedUser2,
                         relationshipType,
@@ -161,7 +161,7 @@ const App = () => {
             .catch(error => console.error(error));
     };
     const deleteRelationship = () => {
-        axios.delete('http://localhost:3000/delete-relationship',
+        axios.delete('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/delete-relationship',
             { data: { user1: selectedUser1, user2: selectedUser2, relationshipType, bidirectional } })
             .then(response => {
                 console.log(response.data);
@@ -170,7 +170,7 @@ const App = () => {
             .catch(error => console.error(error));
     };
     const findCommonRelations = () => {
-        axios.get(`http://localhost:3000/common-relations/${selectedUser1}/${selectedUser2}`)
+        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/common-relations/${selectedUser1}/${selectedUser2}`)
             .then(response => {
                 setCommonRelations(response.data)
                 setShowCommonRelations(true);
@@ -178,7 +178,7 @@ const App = () => {
             .catch(error => console.error(error));
     };
     const findShortestPath = () => {
-        axios.get(`http://localhost:3000/shortest-path/${selectedUser1}/${selectedUser2}`)
+        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/shortest-path/${selectedUser1}/${selectedUser2}`)
             .then(response => {
                     setShortestPath(response.data);
                     setShowShortestPath(true);
