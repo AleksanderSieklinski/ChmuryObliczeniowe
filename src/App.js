@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import './App.css';
 import axios from 'axios';
-import { Container, TextField, Button, Select, MenuItem, Checkbox, AppBar, Toolbar , FormControlLabel, Typography, List, ListItem, ListItemText, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Container, TextField, Button, Select, MenuItem, Checkbox, AppBar, Toolbar, FormControlLabel, Typography, List, ListItem, ListItemText, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Graph from './Graph';
+
+const Graph = lazy(() => import('./Graph.js'));
+
 const App = () => {
+    const API_BASE_URL = 'https://calm-island-96715-e77cfe48716f.herokuapp.com';
     const [users, setUsers] = useState([]);
     const [newUserName, setNewUserName] = useState('');
     const [newUserAge, setNewUserAge] = useState('');
@@ -24,13 +27,28 @@ const App = () => {
     const [showMutualInterests, setShowMutualInterests] = useState(false);
     const [relationships, setRelationships] = useState([]);
     const [elements, setElements] = useState([]);
+    const [isGraphExpanded, setIsGraphExpanded] = useState(false);
+
+    const fetchUsers = useCallback(() => {
+        axios.get(`${API_BASE_URL}/users`)
+            .then(response => setUsers(response.data))
+            .catch(error => console.error(error));
+    }, [API_BASE_URL]);
+
+    const fetchRelationships = useCallback(() => {
+        axios.get(`${API_BASE_URL}/relationships`)
+            .then(response => setRelationships(response.data))
+            .catch(error => console.error(error));
+    }, [API_BASE_URL]);
+
     useEffect(() => {
         fetchUsers();
         fetchRelationships();
-    }, []);
+    }, [fetchUsers, fetchRelationships]);
+
     useEffect(() => {
         if (selectedUser1 && selectedUser2) {
-            axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/relationship/${selectedUser1}/${selectedUser2}`)
+            axios.get(`${API_BASE_URL}/relationship/${selectedUser1}/${selectedUser2}`)
                 .then(response => {
                     if (response.data.relationship) {
                         setRelationshipType(response.data.relationship);
@@ -39,8 +57,7 @@ const App = () => {
                     }
                 })
                 .catch(error => console.error(error));
-        }
-        else {
+        } else {
             setRelationshipType('');
             setCommonRelations([]);
             setShortestPath([]);
@@ -49,54 +66,31 @@ const App = () => {
             setShowShortestPath(false);
             setShowMutualInterests(false);
         }
-    }, [selectedUser1, selectedUser2]);
+    }, [selectedUser1, selectedUser2, API_BASE_URL]);
+
     useEffect(() => {
-        const nodes = users.map(user => ({ data: { id: user.name, name: user.name , age: user.age, location: user.location, interests: user.interests.join(', ') } }));
+        const nodes = users.map(user => ({ data: { id: user.name, name: user.name, age: user.age, location: user.location, interests: user.interests.join(', ') } }));
         const edges = relationships.map(rel => ({ data: { source: rel.user1, target: rel.user2, label: rel.type } }));
         setElements([...nodes, ...edges]);
     }, [users, relationships]);
-    const fetchUsers = () => {
-        axios.get('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/users')
-            .then(response => setUsers(response.data))
-            .catch(error => console.error(error));
-    };
-    const fetchRelationships = () => {
-        axios.get('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/relationships')
-            .then(response => setRelationships(response.data))
-            .catch(error => console.error(error));
-    };
-    const findMutualInterests = () => {
-        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/mutual-interests/${selectedUser1}/${selectedUser2}`)
+
+    const findMutualInterests = useCallback(() => {
+        axios.get(`${API_BASE_URL}/mutual-interests/${selectedUser1}/${selectedUser2}`)
             .then(response => {
                 setMutualInterests(response.data);
                 setShowMutualInterests(true);
             })
             .catch(error => console.error(error));
-    };
-    // const sendMessage = () => {
-    //     axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/send-message', {
-    //         sender: selectedUser1,
-    //         receiver: selectedUser2,
-    //         message: messageText
-    //     })
-    //         .then(() => {
-    //             setMessageText('');
-    //             fetchMessages();
-    //         })
-    //         .catch(error => console.error(error));
-    // };
-    // const fetchMessages = () => {
-    //     axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/messages/${selectedUser1}/${selectedUser2}`)
-    //         .then(response => setMessages(response.data))
-    //         .catch(error => console.error(error));
-    // };
-    const searchUsers = () => {
-        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/search-users?query=${searchQuery}`)
+    }, [selectedUser1, selectedUser2, API_BASE_URL]);
+
+    const searchUsers = useCallback(() => {
+        axios.get(`${API_BASE_URL}/search-users?query=${searchQuery}`)
             .then(response => setSearchResults(response.data))
             .catch(error => console.error(error));
-    };
-    const addUser = () => {
-        axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/add-user', {
+    }, [searchQuery, API_BASE_URL]);
+
+    const addUser = useCallback(() => {
+        axios.post(`${API_BASE_URL}/add-user`, {
             name: newUserName,
             age: newUserAge,
             location: newUserLocation,
@@ -110,24 +104,26 @@ const App = () => {
                 setNewUserInterests('');
             })
             .catch(error => console.error(error));
-    };
-    const deleteUser = (name) => {
-        axios.delete(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/delete-user/${name}`)
+    }, [newUserName, newUserAge, newUserLocation, newUserInterests, users, API_BASE_URL]);
+
+    const deleteUser = useCallback((name) => {
+        axios.delete(`${API_BASE_URL}/delete-user/${name}`)
             .then(response => {
                 setUsers(users.filter(user => user.name !== name));
                 console.log(response.data);
             })
             .catch(error => console.error(error));
-    };
-    const addRelationship = () => {
-        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/relationship/${selectedUser1}/${selectedUser2}`)
+    }, [users, API_BASE_URL]);
+
+    const addRelationship = useCallback(() => {
+        axios.get(`${API_BASE_URL}/relationship/${selectedUser1}/${selectedUser2}`)
             .then(response => {
                 if (response.data.relationship) {
-                    axios.delete('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/delete-relationship', {
+                    axios.delete(`${API_BASE_URL}/delete-relationship`, {
                         data: { user1: selectedUser1, user2: selectedUser2, relationshipType, bidirectional }
                     })
                         .then(() => {
-                            axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/add-relationship', {
+                            axios.post(`${API_BASE_URL}/add-relationship`, {
                                 user1: selectedUser1,
                                 user2: selectedUser2,
                                 relationshipType,
@@ -137,13 +133,13 @@ const App = () => {
                                     setSelectedUser1('');
                                     setSelectedUser2('');
                                     setRelationshipType(null);
-                                    fetchRelationships(); // Fetch relationships to update the graph
+                                    fetchRelationships();
                                 })
                                 .catch(error => console.error(error));
                         })
                         .catch(error => console.error(error));
                 } else {
-                    axios.post('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/add-relationship', {
+                    axios.post(`${API_BASE_URL}/add-relationship`, {
                         user1: selectedUser1,
                         user2: selectedUser2,
                         relationshipType,
@@ -153,38 +149,43 @@ const App = () => {
                             setSelectedUser1('');
                             setSelectedUser2('');
                             setRelationshipType(null);
-                            fetchRelationships(); // Fetch relationships to update the graph
+                            fetchRelationships();
                         })
                         .catch(error => console.error(error));
                 }
             })
             .catch(error => console.error(error));
-    };
-    const deleteRelationship = () => {
-        axios.delete('https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/delete-relationship',
-            { data: { user1: selectedUser1, user2: selectedUser2, relationshipType, bidirectional } })
+    }, [selectedUser1, selectedUser2, relationshipType, bidirectional, fetchRelationships, API_BASE_URL]);
+
+    const deleteRelationship = useCallback(() => {
+        axios.delete(`${API_BASE_URL}/delete-relationship`, {
+            data: { user1: selectedUser1, user2: selectedUser2, relationshipType, bidirectional }
+        })
             .then(response => {
                 console.log(response.data);
-                fetchRelationships(); // Fetch relationships to update the graph
+                fetchRelationships();
             })
             .catch(error => console.error(error));
-    };
-    const findCommonRelations = () => {
-        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/common-relations/${selectedUser1}/${selectedUser2}`)
+    }, [selectedUser1, selectedUser2, relationshipType, bidirectional, fetchRelationships, API_BASE_URL]);
+
+    const findCommonRelations = useCallback(() => {
+        axios.get(`${API_BASE_URL}/common-relations/${selectedUser1}/${selectedUser2}`)
             .then(response => {
-                setCommonRelations(response.data)
+                setCommonRelations(response.data);
                 setShowCommonRelations(true);
-    })
+            })
             .catch(error => console.error(error));
-    };
-    const findShortestPath = () => {
-        axios.get(`https://rocky-thicket-51111-6bf02102f9f1.herokuapp.com/shortest-path/${selectedUser1}/${selectedUser2}`)
+    }, [selectedUser1, selectedUser2, API_BASE_URL]);
+
+    const findShortestPath = useCallback(() => {
+        axios.get(`${API_BASE_URL}/shortest-path/${selectedUser1}/${selectedUser2}`)
             .then(response => {
-                    setShortestPath(response.data);
-                    setShowShortestPath(true);
-                })
+                setShortestPath(response.data);
+                setShowShortestPath(true);
+            })
             .catch(error => console.error(error));
-    };
+    }, [selectedUser1, selectedUser2, API_BASE_URL]);
+
     return (
         <Container>
             <AppBar position="static">
@@ -232,14 +233,12 @@ const App = () => {
                 <AccordionDetails>
                     <div>
                         <Typography variant="h6">Search Users</Typography>
-                        <TextField label="Search" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                                   fullWidth margin="normal"/>
+                        <TextField label="Search" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} fullWidth margin="normal" />
                         <Button variant="contained" color="primary" onClick={searchUsers}>Search</Button>
                         <List>
                             {searchResults.map((user, index) => (
                                 <ListItem key={index}>
-                                    <ListItemText
-                                        primary={`${user.name} (Age: ${user.age}, Location: ${user.location}, Interests: ${user.interests.join(', ')})`}/>
+                                    <ListItemText primary={`${user.name} (Age: ${user.age}, Location: ${user.location}, Interests: ${user.interests.join(', ')})`} />
                                 </ListItem>
                             ))}
                         </List>
@@ -255,8 +254,7 @@ const App = () => {
                             </Select>
                         </div>
                         <div>
-                            <Select value={selectedUser2} onChange={e => setSelectedUser2(e.target.value)} fullWidth
-                                    disabled={!selectedUser1}>
+                            <Select value={selectedUser2} onChange={e => setSelectedUser2(e.target.value)} fullWidth disabled={!selectedUser1}>
                                 <MenuItem value=""><em>Select User</em></MenuItem>
                                 {users.filter(user => user.name !== selectedUser1).map(user => (
                                     <MenuItem key={user.name} value={user.name}>{user.name}</MenuItem>
@@ -264,34 +262,26 @@ const App = () => {
                             </Select>
                         </div>
                         {selectedUser1 && selectedUser2 && (
-                        <div>
-                            <Select value={relationshipType} onChange={e => setRelationshipType(e.target.value)}
-                                    fullWidth>
-                                <MenuItem value=""><em>Select Relationship</em></MenuItem>
-                                <MenuItem value="FRIEND">Friend</MenuItem>
-                                <MenuItem value="FAMILY_MEMBER">Family Member</MenuItem>
-                                <MenuItem value="COLLEAGUE">Colleague</MenuItem>
-                                <MenuItem value="PEER">Peer</MenuItem>
-                                <MenuItem value="LOVER">Lover</MenuItem>
-                            </Select>
-                        </div>
+                            <div>
+                                <Select value={relationshipType} onChange={e => setRelationshipType(e.target.value)} fullWidth>
+                                    <MenuItem value=""><em>Select Relationship</em></MenuItem>
+                                    <MenuItem value="FRIEND">Friend</MenuItem>
+                                    <MenuItem value="FAMILY_MEMBER">Family Member</MenuItem>
+                                    <MenuItem value="COLLEAGUE">Colleague</MenuItem>
+                                    <MenuItem value="PEER">Peer</MenuItem>
+                                    <MenuItem value="LOVER">Lover</MenuItem>
+                                </Select>
+                            </div>
                         )}
                     </div>
                     {selectedUser1 && selectedUser2 && (
-                    <div>
-                        <FormControlLabel
-                            control={<Checkbox checked={bidirectional}
-                                               onChange={e => setBidirectional(e.target.checked)}/>}
-                            label="Bidirectional"
-                        />
-                        <Button variant="contained" color="primary" onClick={addRelationship}>Create
-                            Relationship</Button>
-                        <Button variant="contained" color="secondary" onClick={deleteRelationship}>Delete
-                            Relationship</Button>
-                    </div>
+                        <div>
+                            <FormControlLabel control={<Checkbox checked={bidirectional} onChange={e => setBidirectional(e.target.checked)} />} label="Bidirectional" />
+                            <Button variant="contained" color="primary" onClick={addRelationship}>Create Relationship</Button>
+                            <Button variant="contained" color="secondary" onClick={deleteRelationship}>Delete Relationship</Button>
+                        </div>
                     )}
-
-                        <>
+                    <>
                         {selectedUser1 && selectedUser2 && (
                             <div>
                                 <Button variant="contained" color="primary" onClick={findCommonRelations}>Find Common Relations</Button>
@@ -299,19 +289,19 @@ const App = () => {
                                 <Button variant="contained" color="primary" onClick={findMutualInterests}>Find Mutual Interests</Button>
                             </div>
                         )}
-                            {showMutualInterests && (
-                                <div>
-                                    <Typography variant="h6">Mutual Interests</Typography>
-                                    <List>
-                                        {mutualInterests.map((interest, index) => (
-                                            <ListItem key={index}>
-                                                <ListItemText primary={interest} />
-                                            </ListItem>
-                                        ))}
-                                    </List>
-                                </div>
-                            )}
-                            {showCommonRelations && (
+                        {showMutualInterests && (
+                            <div>
+                                <Typography variant="h6">Mutual Interests</Typography>
+                                <List>
+                                    {mutualInterests.map((interest, index) => (
+                                        <ListItem key={index}>
+                                            <ListItemText primary={interest} />
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </div>
+                        )}
+                        {showCommonRelations && (
                             <div>
                                 <Typography variant="h6">Common Relations</Typography>
                                 <List>
@@ -322,31 +312,36 @@ const App = () => {
                                     ))}
                                 </List>
                             </div>
-                            )}
-                            {showShortestPath && (
-                                <div>
-                                    <Typography variant="h6">Shortest Path</Typography>
-                                    <List>
-                                        {shortestPath.map((segment, index) => (
-                                            <ListItem key={index}>
-                                                <ListItemText primary={`${segment.start} -[${segment.type}]-> ${segment.end}`} />
-                                            </ListItem>
-                                        ))}
-                                    </List>
-                                </div>
-                            )}
-                        </>
+                        )}
+                        {showShortestPath && (
+                            <div>
+                                <Typography variant="h6">Shortest Path</Typography>
+                                <List>
+                                    {shortestPath.map((segment, index) => (
+                                        <ListItem key={index}>
+                                            <ListItemText primary={`${segment.start} -[${segment.type}]-> ${segment.end}`} />
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </div>
+                        )}
+                    </>
                 </AccordionDetails>
             </Accordion>
-            <Accordion>
+            <Accordion expanded={isGraphExpanded} onChange={() => setIsGraphExpanded(!isGraphExpanded)}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography variant="h5">Graph Visualization</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <Graph elements={elements}/>
+                    {isGraphExpanded && (
+                        <Suspense fallback={<div>Loading...</div>}>
+                            <Graph elements={elements} />
+                        </Suspense>
+                    )}
                 </AccordionDetails>
             </Accordion>
         </Container>
     );
 };
+
 export default App;

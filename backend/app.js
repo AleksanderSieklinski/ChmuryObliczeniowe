@@ -3,7 +3,7 @@ const neo4j = require('neo4j-driver');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -13,7 +13,6 @@ const USER = 'neo4j';
 const PASSWORD = 'tl6EmVne1kc2Oo7aZkA3G_WVz3Ni_pgho-p-Iuof9YY';
 const driver = neo4j.driver(URL, neo4j.auth.basic(USER, PASSWORD));
 
-// Middleware to log every request
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.url}`);
     const originalSend = res.send;
@@ -23,8 +22,6 @@ app.use((req, res, next) => {
     };
     next();
 });
-
-// Middleware to handle transactions
 app.use(async (req, res, next) => {
     const session = driver.session();
     req.neo4jSession = session;
@@ -41,8 +38,6 @@ app.use(async (req, res, next) => {
 
     next();
 });
-
-// Extend the user model to include additional fields
 app.post('/add-user', async (req, res) => {
     const { name, age, location, interests } = req.body;
     try {
@@ -55,8 +50,6 @@ app.post('/add-user', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to create a relationship between two users
 app.post('/add-relationship', async (req, res) => {
     const { user1, user2, relationshipType, bidirectional } = req.body;
 
@@ -89,8 +82,6 @@ app.post('/add-relationship', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to get all users
 app.get('/users', async (req, res) => {
     try {
         const result = await req.tx.run('MATCH (u:User) RETURN u');
@@ -99,8 +90,6 @@ app.get('/users', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to get the relationship between two users
 app.get('/relationship/:user1/:user2', async (req, res) => {
     const { user1, user2 } = req.params;
     try {
@@ -117,8 +106,6 @@ app.get('/relationship/:user1/:user2', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to get common relations between two users
 app.get('/common-relations/:user1/:user2', async (req, res) => {
     const { user1, user2 } = req.params;
     try {
@@ -141,8 +128,6 @@ app.get('/common-relations/:user1/:user2', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to find mutual interests between two users
 app.get('/mutual-interests/:user1/:user2', async (req, res) => {
     const { user1, user2 } = req.params;
     try {
@@ -158,40 +143,6 @@ app.get('/mutual-interests/:user1/:user2', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to send a message
-app.post('/send-message', async (req, res) => {
-    const { sender, receiver, message } = req.body;
-    try {
-        await req.tx.run(
-            'MATCH (s:User {name: $sender}), ' +
-            '(r:User {name: $receiver}) CREATE (s)-[:SENT]->(m:Message {text: $message, timestamp: timestamp()})-[:RECEIVED_BY]->(r)',
-            { sender, receiver, message }
-        );
-        res.status(200).send('Message sent');
-    } catch (error) {
-        res.status(500).send(error);
-    }
-});
-
-// Endpoint to retrieve messages between two users
-app.get('/messages/:user1/:user2', async (req, res) => {
-    const { user1, user2 } = req.params;
-    try {
-        const result = await req.tx.run(
-            `
-            MATCH (u1:User {name: $user1})-[:SENT]->(m:Message)-[:RECEIVED_BY]->(u2:User {name: $user2})
-            RETURN m ORDER BY m.timestamp
-            `,
-            { user1, user2 }
-        );
-        res.json(result.records.map(record => record.get('m').properties));
-    } catch (error) {
-        res.status(500).send(error);
-    }
-});
-
-// Endpoint to search for users
 app.get('/search-users', async (req, res) => {
     const { query } = req.query;
     try {
@@ -208,8 +159,6 @@ app.get('/search-users', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to get all relationships
 app.get('/relationships', async (req, res) => {
     try {
         const result = await req.tx.run(
@@ -225,8 +174,6 @@ app.get('/relationships', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to find the shortest path between two users
 app.get('/shortest-path/:user1/:user2', async (req, res) => {
     const { user1, user2 } = req.params;
     try {
@@ -244,25 +191,21 @@ app.get('/shortest-path/:user1/:user2', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to delete a user and all messages they sent
 app.delete('/delete-user/:name', async (req, res) => {
     const { name } = req.params;
     try {
         await req.tx.run(
             `
-            MATCH (u:User {name: $name})-[:SENT]->(m:Message)
-            DETACH DELETE u, m
+            MATCH (u:User {name: $name})
+            DETACH DELETE u
             `,
             { name }
         );
-        res.status(200).send('User and their messages deleted');
+        res.status(200).send('User deleted');
     } catch (error) {
         res.status(500).send(error);
     }
 });
-
-// Endpoint to delete a relationship between two users
 app.delete('/delete-relationship', async (req, res) => {
     const { user1, user2, relationshipType, bidirectional } = req.body;
 
@@ -281,7 +224,6 @@ app.delete('/delete-relationship', async (req, res) => {
         res.status(500).send(error);
     }
 });
-
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

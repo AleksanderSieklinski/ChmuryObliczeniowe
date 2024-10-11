@@ -1,0 +1,15 @@
+@startuml
+class User {
+  -name: String
+  -location: String
+  -interests: List<String>
+  -age: String
+}
+
+class Relationship {
+  -type: String
+}
+
+User "1" -- "0..*" Relationship : has
+User "0..*" -- "0..*" User : friends
+@enduml

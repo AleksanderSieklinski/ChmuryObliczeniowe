@@ -1,0 +1,15 @@
+@startuml
+actor User
+participant "REST API" as API
+participant "Neo4J Database" as DB
+
+User -> API: GET /search-users?query=John
+API -> DB: MATCH (u:User) WHERE u.name CONTAINS 'John' RETURN u
+DB --> API: List of users
+API --> User: JSON response with users
+
+User -> API: DELETE /delete-user/John
+API -> DB: MATCH (u:User {name: 'John'}) DETACH DELETE u
+DB --> API: Confirmation of deletion
+API --> User: JSON response with deletion confirmation
+@enduml
