@@ -86,4 +86,4 @@ Aplikacja będzie dostępna pod adresem `https://nazwa-aplikacji.herokuapp.com/`
 
 ## Podsumowanie
 
-Projekt "ChmuryObliczeniowe" spełnia wszystkie wymagania określone w zadaniu. Aplikacja wykorzystuje grafową bazę danych Neo4J, jest wdrożona w chmurze Heroku i posiada interfejs RESTful API. Dokumentacja zawiera odpowiednie diagramy UML oraz krótki opis wdrożenia.
+Projekt spełnia wszystkie wymagania określone w zadaniu. Aplikacja wykorzystuje grafową bazę danych Neo4J, jest wdrożona w chmurze Heroku i posiada interfejs RESTful API. Dokumentacja zawiera odpowiednie diagramy UML oraz krótki opis wdrożenia.
